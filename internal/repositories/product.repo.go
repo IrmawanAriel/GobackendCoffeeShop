@@ -44,7 +44,7 @@ func (r *RepoProduct) GetAllProduct() (*models.Products, error) {
 	return &data, nil
 }
 
-func (r *RepoProduct) GetProductById(id string, data *models.Product) (string, error) {
+func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, error) {
 	q := `UPDATE public.product
 		SET description = :description,
 			category = :category,
@@ -83,6 +83,6 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 		return "", err
 	}
 
-	return "Product updated successfully", nil
+	return "Product deleted successfully", nil
 
 }

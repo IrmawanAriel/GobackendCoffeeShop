@@ -43,7 +43,7 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 	ctx.JSON(200, data)
 }
 
-func (h *HandlerProduct) FetchById(ctx *gin.Context) {
+func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	product := models.Product{}
 	id := ctx.Param("id")
 
@@ -52,7 +52,7 @@ func (h *HandlerProduct) FetchById(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.GetProductById(id, &product)
+	data, err := h.UpdateProduct(id, &product)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
