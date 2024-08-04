@@ -31,5 +31,14 @@ func (h *HandlerUser) FetchById(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(200, user)
+}
 
+func (h *HandlerUser) FetchAll(ctx *gin.Context) {
+	data, err := h.GetAllUser()
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, data)
 }

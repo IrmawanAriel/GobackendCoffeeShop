@@ -15,20 +15,26 @@ func NewUser(db *sqlx.DB) *RepoUser {
 }
 
 func (r *RepoUser) GetUserById(id string) (models.User, error) {
-
 	var data models.User
-
-	q := `select id, fullname, email, password, role, address, image, phone from users where id = :id`
-
-	param := map[string]interface{}{
-		"id": id,
-	}
-
-	err := r.Get(&data, q, param)
+	q := `SELECT id, fullname, email, password, role, address, image, phone FROM users WHERE id = $1`
+	err := r.Get(&data, q, id)
 	if err != nil {
-		return models.User{}, err
+		return data, err
+	}
+	return data, nil
+}
+
+func (r *RepoUser) GetAllUser() (*models.Users, error) {
+	q := `SELECT * FROM public.users`
+	data := models.Users{}
+
+	if err := r.Select(&data, q); err != nil {
+		return nil, err
 	}
 
-	return data, nil
-
+	return &data, nil
 }
+
+// func (r *RepoUser) UpdateUser (string, error) {
+
+// }

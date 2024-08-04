@@ -10,7 +10,7 @@ type User struct {
 	Email      string     `db:"email" json: "email"`
 	Password   string     `db:"password" json: "password"`
 	Address    *string    `db:"address" json: "address"`
-	Created_ad *time.Time `db:"created_ad" json: "created_ad"`
+	Created_at *time.Time `db:"created_at" json: "created_at"`
 	Updated_at *time.Time `db:"updated_at" json: "updated_at"`
 	Is_deleted *bool      `db:"is_deleted" json: "is_deleted"`
 	Image      *string    `db:"image" json: "image"`
