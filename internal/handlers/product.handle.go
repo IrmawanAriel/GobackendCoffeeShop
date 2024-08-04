@@ -60,3 +60,15 @@ func (h *HandlerProduct) FetchById(ctx *gin.Context) {
 	ctx.JSON(200, data)
 
 }
+
+func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	data, err := h.DeleteProductById(id)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	ctx.JSON(200, data)
+
+}

@@ -71,3 +71,18 @@ func (r *RepoProduct) GetProductById(id string, data *models.Product) (string, e
 
 	return "Product updated successfully", nil
 }
+
+func (r *RepoProduct) DeleteProductById(id string) (string, error) {
+	q := `DELETE FROM public.product WHERE id = :id`
+	params := map[string]interface{}{
+		"id": id,
+	}
+
+	_, err := r.NamedExec(q, params)
+	if err != nil {
+		return "", err
+	}
+
+	return "Product updated successfully", nil
+
+}
