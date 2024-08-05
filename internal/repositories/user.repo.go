@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
+	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -35,6 +37,81 @@ func (r *RepoUser) GetAllUser() (*models.Users, error) {
 	return &data, nil
 }
 
-// func (r *RepoUser) UpdateUser (string, error) {
+func (r *RepoUser) UpdateUser(id string, data *models.User) (string, error) {
+	setClauses := []string{}
+	params := map[string]interface{}{"id": id}
 
-// }
+	if data.Fullname != "" {
+		setClauses = append(setClauses, "fullname = :fullname")
+		params["fullname"] = data.Fullname
+	}
+	if data.Email != "" {
+		setClauses = append(setClauses, "email = :email")
+		params["email"] = data.Email
+	}
+	if data.Password != "" {
+		setClauses = append(setClauses, "password = :password")
+		params["password"] = data.Password
+	}
+	if data.Role != "" {
+		setClauses = append(setClauses, "role = :role")
+		params["role"] = data.Role
+	}
+	if data.Address != nil {
+		setClauses = append(setClauses, "address = :address")
+		params["address"] = *data.Address
+	}
+	if data.Image != nil {
+		setClauses = append(setClauses, "image = :image")
+		params["image"] = *data.Image
+	}
+	if data.Phone != nil {
+		setClauses = append(setClauses, "phone = :phone")
+		params["phone"] = *data.Phone
+	}
+
+	if len(setClauses) == 0 {
+		return "", fmt.Errorf("no fields to update")
+	}
+
+	q := fmt.Sprintf(`UPDATE public.users SET %s WHERE id = :id`, strings.Join(setClauses, ", "))
+
+	_, err := r.DB.NamedExec(q, params)
+	if err != nil {
+		return "Update Failed", err
+	}
+
+	return "User updated successfully", nil
+}
+
+func (r *RepoUser) InsertUser(data *models.User) (string, error) {
+	q := `INSERT INTO public.users (fullname, email, password)
+          VALUES (:fullname, :email, :password)`
+
+	params := map[string]interface{}{
+		"fullname": data.Fullname,
+		"email":    data.Email,
+		"password": data.Password,
+	}
+
+	_, err := r.DB.NamedExec(q, params)
+	if err != nil {
+		return "Create Failed", err
+	}
+
+	return "User inserted successfully", nil
+}
+
+func (h *RepoUser) DeleteUserById(id string) (string, error) {
+	q := `DELETE FROM public.users WHERE id = :id`
+	params := map[string]interface{}{
+		"id": id,
+	}
+
+	_, err := h.NamedExec(q, params)
+	if err != nil {
+		return "Delete Failed", err
+	}
+
+	return "User deleted successfully", nil
+}

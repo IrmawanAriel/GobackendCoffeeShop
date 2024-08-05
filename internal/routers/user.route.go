@@ -15,8 +15,9 @@ func user(g *gin.Engine, d *sqlx.DB) {
 	handler := handlers.NewUser(repo)
 
 	route.GET("/", handler.FetchAll)
-	// route.POST("/", handler.CreateUser)
+	route.PATCH("/update/:id", handler.UpdateUserById)
 	route.GET("/:id", handler.FetchById)
-	// route.DELETE("/delete/:id", handler.DeleteUser)
+	route.DELETE("/delete/:id", handler.DeleteUser)
+	route.POST("/create/", handler.CreateUser)
 
 }

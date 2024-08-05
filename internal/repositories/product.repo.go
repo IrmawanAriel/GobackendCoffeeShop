@@ -27,7 +27,7 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 
 	_, err := r.NamedExec(q, data)
 	if err != nil {
-		return "", err
+		return "Create Failed", err
 	}
 
 	return "1 data product created", nil
@@ -52,7 +52,7 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 			price = :price,
 			rating = :rating,
 			product_name = :product_name
-		WHERE id = 1
+		WHERE id = :id
 		`
 	params := map[string]interface{}{
 		"id":           id,
@@ -66,7 +66,7 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "", err
+		return "Update Failed", err
 	}
 
 	return "Product updated successfully", nil
@@ -80,7 +80,7 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "", err
+		return "Delete Failed", err
 	}
 
 	return "Product deleted successfully", nil
