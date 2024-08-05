@@ -16,12 +16,3 @@ type Product struct {
 }
 
 type Products []Product
-
-//favorite product
-
-type Favorite struct {
-	User_id    int `db:"user_id" json:"user_id"`
-	Product_id int `db"product_id" json:"product_id"`
-}
-
-type Favorites []Favorite
