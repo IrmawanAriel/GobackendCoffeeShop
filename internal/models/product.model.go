@@ -12,7 +12,7 @@ type Product struct {
 	Product_name string     `db:"product_name" json:"product_name"`
 	Updated_at   *time.Time `db:"updated_at" json:"updated_at"`
 	Image        *string    `db:"image" json:"image"`
-	Uuid         string     `db:"uuid" json:"uuid"`
+	// Uuid         string     `db:"uuid" json:"uuid"`
 }
 
 type Products []Product

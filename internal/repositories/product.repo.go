@@ -3,7 +3,6 @@ package repositories
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
-	"fmt"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -65,8 +64,6 @@ func (r *RepoProduct) GetAllProduct(search string, sort string, category string)
 	}
 
 	query = r.Rebind(query)
-
-	fmt.Print(search, "<- ini search ", sort, "<- ini sort ")
 
 	if err := r.Select(&data, query, args...); err != nil {
 		return nil, err
