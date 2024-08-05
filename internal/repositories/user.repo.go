@@ -27,7 +27,7 @@ func (r *RepoUser) GetUserById(id string) (models.User, error) {
 }
 
 func (r *RepoUser) GetAllUser() (*models.Users, error) {
-	q := `SELECT * FROM public.users`
+	q := `SELECT id, fullname, email, password, role, address, image, phone FROM public.users`
 	data := models.Users{}
 
 	if err := r.Select(&data, q); err != nil {
