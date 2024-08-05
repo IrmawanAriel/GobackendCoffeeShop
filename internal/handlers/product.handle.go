@@ -34,7 +34,11 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 }
 
 func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
-	data, err := h.GetAllProduct()
+
+	search := ctx.Query("search")
+	sort := ctx.Query("sort")
+
+	data, err := h.GetAllProduct(search, sort)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -71,4 +75,44 @@ func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
 	}
 	ctx.JSON(200, data)
 
+}
+
+func (h HandlerProduct) GetFavorite(ctx *gin.Context) {
+
+	userId := ctx.Param("userId")
+	data, err := h.GetFavoritesProduct(userId)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	ctx.JSON(200, data)
+}
+
+func (h HandlerProduct) AddFavorite(ctx *gin.Context) {
+
+	userId := ctx.Param("userId")
+	productId := ctx.Param("productId")
+
+	data, err := h.AddFavoriteProduct(userId, productId)
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, data)
+}
+
+func (h HandlerProduct) DeleteFavorite(ctx *gin.Context) {
+	userId := ctx.Param("userId")
+	productId := ctx.Param("productId")
+
+	data, err := h.DeleteFavoriteProduct(userId, productId)
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, data)
 }

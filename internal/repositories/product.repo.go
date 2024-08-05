@@ -3,6 +3,8 @@ package repositories
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
+	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -33,11 +35,34 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 	return "1 data product created", nil
 }
 
-func (r *RepoProduct) GetAllProduct() (*models.Products, error) {
-	q := `SELECT * FROM public.product`
-	data := models.Products{}
+func (r *RepoProduct) GetAllProduct(search string, sort string) (*models.Products, error) {
+	baseQuery := `SELECT * FROM public.product`
+	var conditions []string
+	var params []interface{}
 
-	if err := r.Select(&data, q); err != nil {
+	if search != "" {
+		conditions = append(conditions, " product_name ILIKE ?")
+		params = append(params, "%"+search+"%")
+	}
+
+	if len(conditions) > 0 {
+		baseQuery += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	if sort != "" {
+		baseQuery += " ORDER BY " + sort
+	}
+
+	data := models.Products{}
+	query, args, err := sqlx.In(baseQuery, params...)
+	if err != nil {
+		return nil, err
+	}
+	query = r.Rebind(query)
+
+	fmt.Print(search, "<- ini search ", sort, "<- ini sort ")
+
+	if err := r.Select(&data, query, args...); err != nil {
 		return nil, err
 	}
 
@@ -84,5 +109,58 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 	}
 
 	return "Product deleted successfully", nil
+
+}
+
+func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, error) {
+	q := `SELECT p.*
+          FROM product p
+          JOIN favorite_product fp ON p.id = fp.product_id
+          WHERE fp.user_id = $1;
+          `
+	var products models.Products
+
+	err := r.Select(&products, q, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &products, nil
+}
+
+func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string, error) {
+	q := `INSERT INTO public.favorite_product ("user_id","product_id") 
+	VALUES(
+	:user_id,
+	:product_id )`
+
+	params := map[string]interface{}{
+		"user_id":    userId,
+		"product_id": productId,
+	}
+
+	_, err := r.NamedExec(q, params)
+	if err != nil {
+		return "adding Failed", err
+	}
+
+	return "Product added to favorite successfully", nil
+
+}
+
+func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (string, error) {
+	q := `DELETE FROM public.favorite_product WHERE user_id = :user_id and product_id = :product_id`
+
+	params := map[string]interface{}{
+		"user_id":    userId,
+		"product_id": productId,
+	}
+
+	_, err := r.NamedExec(q, params)
+	if err != nil {
+		return "adding Failed", err
+	}
+
+	return "Product deleted from favorite successfully", nil
 
 }

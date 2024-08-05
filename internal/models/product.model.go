@@ -2,8 +2,6 @@ package models
 
 import "time"
 
-// INSERT INTO "product"("description","category","stock","price","rating","product_name") VALUES('test','coffee',3,25000,3.5,'Matcha Latte');
-
 type Product struct {
 	Id           int        `db:"id" json:"id"`
 	Description  string     `db:"description" json:"description"`
@@ -18,3 +16,12 @@ type Product struct {
 }
 
 type Products []Product
+
+//favorite product
+
+type Favorite struct {
+	User_id    int `db:"user_id" json:"user_id"`
+	Product_id int `db"product_id" json:"product_id"`
+}
+
+type Favorites []Favorite
