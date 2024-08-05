@@ -35,14 +35,19 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 	return "1 data product created", nil
 }
 
-func (r *RepoProduct) GetAllProduct(search string, sort string) (*models.Products, error) {
+func (r *RepoProduct) GetAllProduct(search string, sort string, category string) (*models.Products, error) {
 	baseQuery := `SELECT * FROM public.product`
 	var conditions []string
-	var params []interface{}
+	var params = make(map[string]interface{})
 
 	if search != "" {
-		conditions = append(conditions, " product_name ILIKE ?")
-		params = append(params, "%"+search+"%")
+		conditions = append(conditions, "product_name ILIKE :search")
+		params["search"] = "%" + search + "%"
+	}
+
+	if category != "" {
+		conditions = append(conditions, "category = :category")
+		params["category"] = category
 	}
 
 	if len(conditions) > 0 {
@@ -54,10 +59,11 @@ func (r *RepoProduct) GetAllProduct(search string, sort string) (*models.Product
 	}
 
 	data := models.Products{}
-	query, args, err := sqlx.In(baseQuery, params...)
+	query, args, err := sqlx.Named(baseQuery, params)
 	if err != nil {
 		return nil, err
 	}
+
 	query = r.Rebind(query)
 
 	fmt.Print(search, "<- ini search ", sort, "<- ini sort ")

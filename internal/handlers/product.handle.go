@@ -37,8 +37,9 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 
 	search := ctx.Query("search")
 	sort := ctx.Query("sort")
+	category := ctx.Query("category")
 
-	data, err := h.GetAllProduct(search, sort)
+	data, err := h.GetAllProduct(search, sort, category)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
