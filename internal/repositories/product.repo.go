@@ -34,10 +34,10 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 	return "1 data product created", nil
 }
 
-func (r *RepoProduct) GetAllProduct(search string, sort string, category string) (*models.Products, error) {
+func (r *RepoProduct) GetAllProduct(search string, sort string, category string, pagination *models.Pagination) (*models.Products, error) {
 	baseQuery := `SELECT * FROM public.product`
 	var conditions []string
-	var params = make(map[string]interface{})
+	params := make(map[string]interface{})
 
 	if search != "" {
 		conditions = append(conditions, "product_name ILIKE :search")
@@ -51,6 +51,13 @@ func (r *RepoProduct) GetAllProduct(search string, sort string, category string)
 
 	if len(conditions) > 0 {
 		baseQuery += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	if pagination.Limit > 0 {
+		offset := (pagination.Page - 1) * pagination.Limit
+		baseQuery += " LIMIT :limit OFFSET :offset"
+		params["limit"] = pagination.Limit
+		params["offset"] = offset
 	}
 
 	if sort != "" {

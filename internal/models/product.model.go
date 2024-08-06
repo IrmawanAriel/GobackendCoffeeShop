@@ -15,4 +15,11 @@ type Product struct {
 	// Uuid         string     `db:"uuid" json:"uuid"`
 }
 
+type Pagination struct {
+	Products []Product `json:"products"`
+	Page     int
+	Limit    int
+	Total    int `json:"total"`
+}
+
 type Products []Product

@@ -4,6 +4,7 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,8 +39,18 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 	search := ctx.Query("search")
 	sort := ctx.Query("sort")
 	category := ctx.Query("category")
+	limit := ctx.Query("limit")
+	page := ctx.Query("page")
 
-	data, err := h.GetAllProduct(search, sort, category)
+	limits, _ := strconv.Atoi(limit)
+	pages, _ := strconv.Atoi(page)
+
+	params := &models.Pagination{
+		Limit: limits,
+		Page:  pages,
+	}
+
+	data, err := h.GetAllProduct(search, sort, category, params)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
