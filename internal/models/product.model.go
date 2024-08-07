@@ -4,13 +4,13 @@ import "time"
 
 type Product struct {
 	Id           int        `db:"id" json:"id"`
-	Description  string     `db:"description" json:"description"`
+	Description  string     `db:"description" json:"description,omitempty"`
 	Category     string     `db:"category" json:"category"`
 	Stock        int        `db:"stock" json:"stock"`
 	Price        int        `db:"price" json:"price"`
-	Rating       *float32   `db:"rating" json:"rating"`
+	Rating       *float32   `db:"rating" json:"rating,omitempty"`
 	Product_name string     `db:"product_name" json:"product_name"`
-	Updated_at   *time.Time `db:"updated_at" json:"updated_at"`
+	Updated_at   *time.Time `db:"updated_at" json:"updated_at,omitempty"`
 	Image        *string    `db:"image" json:"image"`
 	// Uuid         string     `db:"uuid" json:"uuid"`
 }
