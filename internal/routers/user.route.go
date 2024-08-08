@@ -18,6 +18,6 @@ func user(g *gin.Engine, d *sqlx.DB) {
 	route.PATCH("/update/:id", handler.UpdateUserById)
 	route.GET("/:id", handler.FetchById)
 	route.DELETE("/delete/:id", handler.DeleteUser)
-	route.POST("/create/", handler.CreateUser)
+	route.POST("/create/", handler.Register)
 
 }

@@ -95,13 +95,7 @@ func (r *RepoUser) InsertUser(data *models.User) (string, error) {
 	q := `INSERT INTO public.users (fullname, email, password)
           VALUES (:fullname, :email, :password)`
 
-	params := map[string]interface{}{
-		"fullname": data.Fullname,
-		"email":    data.Email,
-		"password": data.Password,
-	}
-
-	_, err := r.DB.NamedExec(q, params)
+	_, err := r.DB.NamedExec(q, data)
 	if err != nil {
 		return "Create Failed", err
 	}
@@ -109,11 +103,15 @@ func (r *RepoUser) InsertUser(data *models.User) (string, error) {
 	return "User inserted successfully", nil
 }
 
-func (h *RepoUser) DeleteUserById(id string) (string, error) {
+func (h *RepoUser) DeleteUserById(id int) (string, error) {
 	q := `DELETE FROM public.users WHERE id = :id`
+	q2 := `DELETE FROM public.favorite_product where user_id = :id`
+
 	params := map[string]interface{}{
 		"id": id,
 	}
+
+	h.NamedExec(q2, params)
 
 	_, err := h.NamedExec(q, params)
 	if err != nil {

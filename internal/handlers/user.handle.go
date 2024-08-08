@@ -3,8 +3,11 @@ package handlers
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
+	"IrmawanAriel/goBackendCoffeeShop/pkg"
 	"net/http"
+	"strconv"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,11 +47,18 @@ func (h *HandlerUser) FetchAll(ctx *gin.Context) {
 }
 
 func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	id := ctx.Param("id")
 	var data models.User
 
 	if err := ctx.ShouldBind(&data); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := govalidator.ValidateStruct(&data)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
 		return
 	}
 
@@ -61,11 +71,18 @@ func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
 	ctx.JSON(200, res)
 }
 
-func (h *HandlerUser) CreateUser(ctx *gin.Context) {
+func (h *HandlerUser) Register(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	var data models.User
 
 	if err := ctx.ShouldBind(&data); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := govalidator.ValidateStruct(&data)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
 		return
 	}
 
@@ -81,7 +98,8 @@ func (h *HandlerUser) CreateUser(ctx *gin.Context) {
 }
 
 func (h HandlerUser) DeleteUser(ctx *gin.Context) {
-	id := ctx.Param("id")
+	idUser := ctx.Param("id")
+	id, _ := strconv.Atoi(idUser)
 
 	res, err := h.DeleteUserById(id)
 	if err != nil {
