@@ -4,6 +4,7 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 	"IrmawanAriel/goBackendCoffeeShop/pkg"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -86,8 +87,13 @@ func (h *HandlerUser) Register(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.InsertUser(&data)
+	data.Password, err = pkg.HashPassword(data.Password)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
+		return
+	}
 
+	res, err := h.InsertUser(&data)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -108,5 +114,50 @@ func (h HandlerUser) DeleteUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(200, res)
+
+}
+
+func (r HandlerUser) Login(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
+	var data models.User
+
+	if err := ctx.ShouldBind(&data); err != nil {
+		fmt.Println("error dsinii bind")
+
+		response.BadRequest("login failed", err.Error())
+		fmt.Println("error dsinii bind")
+		return
+	}
+
+	_, err := govalidator.ValidateStruct(&data)
+	if err != nil {
+		response.BadRequest("Login failed", err.Error())
+		fmt.Println("error dsinii validate")
+
+		return
+	}
+
+	result, err := r.GetByEmail(data.Email)
+	if err != nil {
+		response.BadRequest("Login failed", err.Error())
+		fmt.Println("error dsinii bget email")
+
+		return
+	}
+
+	if err := pkg.VerifyPassword(result.Password, data.Password); err != nil {
+		response.BadRequest("Login failed", err.Error())
+		return
+	}
+	fmt.Println("very aman")
+
+	jwt := pkg.NewJWT(result.Id, result.Email)
+	token, err := jwt.GenerateToken()
+	if err != nil {
+		response.Unauthorized("failed generate token", err.Error())
+		return
+	}
+
+	response.Created("login success", token)
 
 }

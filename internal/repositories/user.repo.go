@@ -120,3 +120,17 @@ func (h *RepoUser) DeleteUserById(id int) (string, error) {
 
 	return "User deleted successfully", nil
 }
+
+func (r *RepoUser) GetByEmail(email string) (*models.User, error) {
+	result := models.User{}
+	query := `SELECT * FROM public.users WHERE email = :email`
+	err := r.Get(&result, query, email)
+	if err != nil {
+		fmt.Println("error dsinii query")
+
+		return nil, err
+	}
+	fmt.Println(&result)
+
+	return &result, nil
+}
