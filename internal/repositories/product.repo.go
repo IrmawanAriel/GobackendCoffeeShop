@@ -85,7 +85,7 @@ func (r *RepoProduct) GetProductById(id string) (*models.Product, error) {
 	var data models.Product
 
 	if err := r.Select(&data, q); err != nil {
-		return nil, fmt.Errorf("query execution error: %d", id)
+		return nil, fmt.Errorf("query execution error: %s", id)
 	}
 
 	return &data, nil
@@ -167,7 +167,7 @@ func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "", fmt.Errorf("no product with id: %d\nor no user with id : %d", productId, userId)
+		return "", fmt.Errorf("no product with id: %s\nor no user with id : %s", productId, userId)
 	}
 
 	return "Product added to favorite successfully", nil
