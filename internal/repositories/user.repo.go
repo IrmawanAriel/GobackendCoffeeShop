@@ -38,6 +38,13 @@ func (r *RepoUser) GetAllUser() (*models.Users, error) {
 }
 
 func (r *RepoUser) UpdateUser(id string, data *models.User) (string, error) {
+	q1 := `SELECT id FROM public.users where id = :id`
+	check := models.User{}
+
+	if err := r.Select(&check, q1, id); err != nil {
+		return "No such a User", err
+	}
+
 	setClauses := []string{}
 	params := map[string]interface{}{"id": id}
 

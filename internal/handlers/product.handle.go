@@ -56,21 +56,48 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 		return
 	}
 
+	if len(*data) == 0 {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "No product found"})
+		return
+	}
+
+	ctx.JSON(200, data)
+}
+
+func (h *HandlerProduct) FetchById(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
+		return
+	}
+
+	data, err := h.GetProductById(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No such product"})
+		return
+	}
+
 	ctx.JSON(200, data)
 }
 
 func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	product := models.Product{}
-	id := ctx.Param("id")
+	idParam := ctx.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
+		return
+	}
 
 	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
 		return
 	}
 
 	data, err := h.UpdateProduct(id, &product)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "data is invalid"})
 		return
 	}
 	ctx.JSON(200, data)
@@ -83,6 +110,7 @@ func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
 	data, err := h.DeleteProductById(id)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
 	}
 	ctx.JSON(200, data)
@@ -90,20 +118,42 @@ func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
 }
 
 func (h HandlerProduct) GetFavorite(ctx *gin.Context) {
-
-	userId := ctx.Param("userId")
-	data, err := h.GetFavoritesProduct(userId)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+	user := ctx.Param("userId")
+	userId, err2 := strconv.Atoi(user)
+	if err2 != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
 		return
 	}
+
+	data, str, err := h.GetFavoritesProduct(userId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, str)
+		return
+	}
+
+	if len(*data) == 0 {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "No favorite found"})
+		return
+	}
+
 	ctx.JSON(200, data)
 }
 
 func (h HandlerProduct) AddFavorite(ctx *gin.Context) {
 
-	userId := ctx.Param("userId")
-	productId := ctx.Param("productId")
+	user := ctx.Param("userId")
+	id := ctx.Param("productId")
+
+	userId, err2 := strconv.Atoi(user)
+	if err2 != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
+		return
+	}
+	productId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
+		return
+	}
 
 	data, err := h.AddFavoriteProduct(userId, productId)
 
@@ -116,8 +166,19 @@ func (h HandlerProduct) AddFavorite(ctx *gin.Context) {
 }
 
 func (h HandlerProduct) DeleteFavorite(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	productId := ctx.Param("productId")
+	user := ctx.Param("userId")
+	id := ctx.Param("productId")
+
+	userId, err2 := strconv.Atoi(user)
+	if err2 != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
+		return
+	}
+	productId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
+		return
+	}
 
 	data, err := h.DeleteFavoriteProduct(userId, productId)
 

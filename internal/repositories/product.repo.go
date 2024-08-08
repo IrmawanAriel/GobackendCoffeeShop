@@ -3,6 +3,7 @@ package repositories
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
+	"fmt"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -28,7 +29,7 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 
 	_, err := r.NamedExec(q, data)
 	if err != nil {
-		return "Create Failed", err
+		return "", fmt.Errorf("query execution error: %w", err)
 	}
 
 	return "1 data product created", nil
@@ -53,15 +54,15 @@ func (r *RepoProduct) GetAllProduct(search string, sort string, category string,
 		baseQuery += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	if pagination.Limit > 0 {
-		offset := (pagination.Page - 1) * pagination.Limit
-		baseQuery += " LIMIT :limit OFFSET :offset"
-		params["limit"] = pagination.Limit
-		params["offset"] = offset
-	}
-
 	if sort != "" {
 		baseQuery += " ORDER BY " + sort
+	}
+
+	if pagination.Limit > 0 {
+		offset := (pagination.Page - 1) * pagination.Limit
+		baseQuery += " LIMIT :limit OFFSET :offset "
+		params["limit"] = pagination.Limit
+		params["offset"] = offset
 	}
 
 	data := models.Products{}
@@ -79,7 +80,18 @@ func (r *RepoProduct) GetAllProduct(search string, sort string, category string,
 	return &data, nil
 }
 
-func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, error) {
+func (r *RepoProduct) GetProductById(id int) (*models.Product, error) {
+	q := "SELECT * FROM public.product WHERE id = :id"
+	var data models.Product
+
+	if err := r.Select(&data, q); err != nil {
+		return nil, fmt.Errorf("query execution error: %d", id)
+	}
+
+	return &data, nil
+}
+
+func (r *RepoProduct) UpdateProduct(id int, data *models.Product) (string, error) {
 	q := `UPDATE public.product
 		SET description = :description,
 			category = :category,
@@ -101,7 +113,7 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "Update Failed", err
+		return " Update Failed ", err
 	}
 
 	return "Product updated successfully", nil
@@ -109,9 +121,13 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 
 func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 	q := `DELETE FROM public.product WHERE id = :id`
+	q2 := `DELETE FROM public.favorite_product WHERE product_id = :id`
+
 	params := map[string]interface{}{
 		"id": id,
 	}
+
+	r.NamedExec(q2, params)
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
@@ -122,7 +138,7 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 
 }
 
-func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, error) {
+func (r *RepoProduct) GetFavoritesProduct(userID int) (*models.Products, string, error) {
 	q := `SELECT p.*
           FROM product p
           JOIN favorite_product fp ON p.id = fp.product_id
@@ -132,13 +148,13 @@ func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, erro
 
 	err := r.Select(&products, q, userID)
 	if err != nil {
-		return nil, err
+		return nil, " Massage: Product not found ", err
 	}
 
-	return &products, nil
+	return &products, "", nil
 }
 
-func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string, error) {
+func (r RepoProduct) AddFavoriteProduct(userId int, productId int) (string, error) {
 	q := `INSERT INTO public.favorite_product ("user_id","product_id") 
 	VALUES(
 	:user_id,
@@ -151,14 +167,14 @@ func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "adding Failed", err
+		return "", fmt.Errorf("no product with id: %d\nor no user with id : %d", productId, userId)
 	}
 
 	return "Product added to favorite successfully", nil
 
 }
 
-func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (string, error) {
+func (r RepoProduct) DeleteFavoriteProduct(userId int, productId int) (string, error) {
 	q := `DELETE FROM public.favorite_product WHERE user_id = :user_id and product_id = :product_id`
 
 	params := map[string]interface{}{
@@ -168,7 +184,7 @@ func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (str
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return "adding Failed", err
+		return "Delete Failed, no such product", err
 	}
 
 	return "Product deleted from favorite successfully", nil

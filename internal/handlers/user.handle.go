@@ -55,7 +55,7 @@ func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
 	res, err := h.UpdateUser(id, &data)
 
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No such a user"})
 		return
 	}
 	ctx.JSON(200, res)
