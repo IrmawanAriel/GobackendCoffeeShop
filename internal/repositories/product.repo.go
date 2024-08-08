@@ -80,7 +80,7 @@ func (r *RepoProduct) GetAllProduct(search string, sort string, category string,
 	return &data, nil
 }
 
-func (r *RepoProduct) GetProductById(id int) (*models.Product, error) {
+func (r *RepoProduct) GetProductById(id string) (*models.Product, error) {
 	q := "SELECT * FROM public.product WHERE id = :id"
 	var data models.Product
 
@@ -91,7 +91,7 @@ func (r *RepoProduct) GetProductById(id int) (*models.Product, error) {
 	return &data, nil
 }
 
-func (r *RepoProduct) UpdateProduct(id int, data *models.Product) (string, error) {
+func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, error) {
 	q := `UPDATE public.product
 		SET description = :description,
 			category = :category,
@@ -138,7 +138,7 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 
 }
 
-func (r *RepoProduct) GetFavoritesProduct(userID int) (*models.Products, string, error) {
+func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, string, error) {
 	q := `SELECT p.*
           FROM product p
           JOIN favorite_product fp ON p.id = fp.product_id
@@ -154,7 +154,7 @@ func (r *RepoProduct) GetFavoritesProduct(userID int) (*models.Products, string,
 	return &products, "", nil
 }
 
-func (r RepoProduct) AddFavoriteProduct(userId int, productId int) (string, error) {
+func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string, error) {
 	q := `INSERT INTO public.favorite_product ("user_id","product_id") 
 	VALUES(
 	:user_id,
@@ -174,7 +174,7 @@ func (r RepoProduct) AddFavoriteProduct(userId int, productId int) (string, erro
 
 }
 
-func (r RepoProduct) DeleteFavoriteProduct(userId int, productId int) (string, error) {
+func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (string, error) {
 	q := `DELETE FROM public.favorite_product WHERE user_id = :user_id and product_id = :product_id`
 
 	params := map[string]interface{}{

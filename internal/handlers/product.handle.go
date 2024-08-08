@@ -3,9 +3,11 @@ package handlers
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
+	"IrmawanAriel/goBackendCoffeeShop/pkg"
 	"net/http"
 	"strconv"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,10 +20,17 @@ func NewProduct(r *repositories.RepoProduct) *HandlerProduct {
 }
 
 func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	product := models.Product{}
 
 	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := govalidator.ValidateStruct(&product)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
 		return
 	}
 
@@ -66,13 +75,8 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 
 func (h *HandlerProduct) FetchById(ctx *gin.Context) {
 	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
-		return
-	}
 
-	data, err := h.GetProductById(id)
+	data, err := h.GetProductById(idParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No such product"})
 		return
@@ -84,18 +88,13 @@ func (h *HandlerProduct) FetchById(ctx *gin.Context) {
 func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	product := models.Product{}
 	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
-		return
-	}
 
 	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
 		return
 	}
 
-	data, err := h.UpdateProduct(id, &product)
+	data, err := h.UpdateProduct(idParam, &product)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "data is invalid"})
 		return
@@ -119,13 +118,7 @@ func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
 
 func (h HandlerProduct) GetFavorite(ctx *gin.Context) {
 	user := ctx.Param("userId")
-	userId, err2 := strconv.Atoi(user)
-	if err2 != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
-		return
-	}
-
-	data, str, err := h.GetFavoritesProduct(userId)
+	data, str, err := h.GetFavoritesProduct(user)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, str)
 		return
@@ -144,18 +137,7 @@ func (h HandlerProduct) AddFavorite(ctx *gin.Context) {
 	user := ctx.Param("userId")
 	id := ctx.Param("productId")
 
-	userId, err2 := strconv.Atoi(user)
-	if err2 != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
-		return
-	}
-	productId, err := strconv.Atoi(id)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
-		return
-	}
-
-	data, err := h.AddFavoriteProduct(userId, productId)
+	data, err := h.AddFavoriteProduct(user, id)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -169,18 +151,7 @@ func (h HandlerProduct) DeleteFavorite(ctx *gin.Context) {
 	user := ctx.Param("userId")
 	id := ctx.Param("productId")
 
-	userId, err2 := strconv.Atoi(user)
-	if err2 != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
-		return
-	}
-	productId, err := strconv.Atoi(id)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Product ID"})
-		return
-	}
-
-	data, err := h.DeleteFavoriteProduct(userId, productId)
+	data, err := h.DeleteFavoriteProduct(user, id)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
