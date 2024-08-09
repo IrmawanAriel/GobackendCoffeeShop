@@ -2,6 +2,7 @@ package routers
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/handlers"
+	"IrmawanAriel/goBackendCoffeeShop/internal/middleware"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +16,15 @@ func product(g *gin.Engine, d *sqlx.DB) {
 	handler := handlers.NewProduct(repo)
 
 	route.GET("/", handler.FetchAll) // sorting and seacrh are included
-	route.GET("/:id", handler.FetchById)
-	route.POST("/", handler.PostProduct)
-	route.PATCH("/update/:id", handler.UpdateById)
-	route.DELETE("/delete/:id", handler.DeleteProduct)
+	route.GET("/:id", middleware.AuthJwtMiddleware("user"), handler.FetchById)
+	route.POST("/", middleware.AuthJwtMiddleware("admin"), handler.PostProduct)
+	route.PATCH("/update/:id", middleware.AuthJwtMiddleware("admin"), handler.UpdateById)
+	route.DELETE("/delete/:id", middleware.AuthJwtMiddleware("admin"), handler.DeleteProduct)
 
 	// favorite
-	route.GET("/favorite/:userId/", handler.GetFavorite)
+	route.GET("/favorite/:userId/", middleware.AuthJwtMiddleware("user"), handler.GetFavorite)
 	// route.GET("/favorite/:userId/", handler.SearchParams)
-	route.POST("/favorite/add/:userId/:productId", handler.AddFavorite)
-	route.DELETE("/favorite/delete/:userId/:productId", handler.DeleteFavorite)
+	route.POST("/favorite/add/:userId/:productId", middleware.AuthJwtMiddleware("user"), handler.AddFavorite)
+	route.DELETE("/favorite/delete/:userId/:productId", middleware.AuthJwtMiddleware("user"), handler.DeleteFavorite)
 
 }

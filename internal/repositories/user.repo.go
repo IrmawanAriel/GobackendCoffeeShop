@@ -123,7 +123,7 @@ func (h *RepoUser) DeleteUserById(id int) (string, error) {
 
 func (r *RepoUser) GetByEmail(email string) (*models.User, error) {
 	result := models.User{}
-	query := `SELECT * FROM public.users WHERE email = :email`
+	query := `SELECT * FROM public.users WHERE email = $1`
 	err := r.Get(&result, query, email)
 	if err != nil {
 		fmt.Println("error dsinii query")

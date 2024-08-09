@@ -18,4 +18,9 @@ type User struct {
 	Phone      *string    `db:"phone" json:"phone,omitempty" valid:"matches(^\\+?[1-9]\\d{1,14}$)~Nomor telepon tidak valid"`
 }
 
+type Login struct {
+	Email    string `db:"email" json:"email" valid:"required,email~Format email tidak valid"`
+	Password string `db:"password" json:"password" valid:"required,stringlength(8|100)~Password minimal 8 karakter"`
+}
+
 type Users []User

@@ -4,7 +4,6 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 	"IrmawanAriel/goBackendCoffeeShop/pkg"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -119,29 +118,22 @@ func (h HandlerUser) DeleteUser(ctx *gin.Context) {
 
 func (r HandlerUser) Login(ctx *gin.Context) {
 	response := pkg.NewResponse(ctx)
-	var data models.User
+	var data models.Login
 
 	if err := ctx.ShouldBind(&data); err != nil {
-		fmt.Println("error dsinii bind")
-
 		response.BadRequest("login failed", err.Error())
-		fmt.Println("error dsinii bind")
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&data)
 	if err != nil {
 		response.BadRequest("Login failed", err.Error())
-		fmt.Println("error dsinii validate")
-
 		return
 	}
 
 	result, err := r.GetByEmail(data.Email)
 	if err != nil {
 		response.BadRequest("Login failed", err.Error())
-		fmt.Println("error dsinii bget email")
-
 		return
 	}
 
@@ -149,9 +141,8 @@ func (r HandlerUser) Login(ctx *gin.Context) {
 		response.BadRequest("Login failed", err.Error())
 		return
 	}
-	fmt.Println("very aman")
 
-	jwt := pkg.NewJWT(result.Id, result.Email)
+	jwt := pkg.NewJWT(result.Id, result.Email, result.Role)
 	token, err := jwt.GenerateToken()
 	if err != nil {
 		response.Unauthorized("failed generate token", err.Error())

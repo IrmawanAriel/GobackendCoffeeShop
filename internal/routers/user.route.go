@@ -2,6 +2,7 @@ package routers
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/handlers"
+	"IrmawanAriel/goBackendCoffeeShop/internal/middleware"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +15,12 @@ func user(g *gin.Engine, d *sqlx.DB) {
 	repo := repositories.NewUser(d)
 	handler := handlers.NewUser(repo)
 
-	route.GET("/", handler.FetchAll)
+	route.GET("/", middleware.AuthJwtMiddleware("admin"), handler.FetchAll)
 	route.POST("/login", handler.Login)
-	route.GET("/:id", handler.FetchById)
-	route.POST("/create/", handler.Register)
+	route.GET("/:id", middleware.AuthJwtMiddleware("user"), handler.FetchById)
+	route.POST("/create/", middleware.AuthJwtMiddleware("admin"), handler.Register)
 	route.POST("/register", handler.Register)
-	route.DELETE("/delete/:id", handler.DeleteUser)
-	route.PATCH("/update/:id", handler.UpdateUserById)
+	route.DELETE("/delete/:id", middleware.AuthJwtMiddleware("admin"), handler.DeleteUser)
+	route.PATCH("/update/:id", middleware.AuthJwtMiddleware("user"), handler.UpdateUserById)
 
 }
