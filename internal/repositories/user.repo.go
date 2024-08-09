@@ -126,11 +126,8 @@ func (r *RepoUser) GetByEmail(email string) (*models.User, error) {
 	query := `SELECT * FROM public.users WHERE email = $1`
 	err := r.Get(&result, query, email)
 	if err != nil {
-		fmt.Println("error dsinii query")
 
 		return nil, err
 	}
-	fmt.Println(&result)
-
 	return &result, nil
 }

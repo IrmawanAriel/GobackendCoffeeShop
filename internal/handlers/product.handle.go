@@ -4,6 +4,8 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 	"IrmawanAriel/goBackendCoffeeShop/pkg"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -13,10 +15,11 @@ import (
 
 type HandlerProduct struct {
 	*repositories.RepoProduct
+	pkg.Cloudinary
 }
 
-func NewProduct(r *repositories.RepoProduct) *HandlerProduct {
-	return &HandlerProduct{r}
+func NewProduct(r *repositories.RepoProduct, cld pkg.Cloudinary) *HandlerProduct {
+	return &HandlerProduct{r, cld}
 }
 
 func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
@@ -24,7 +27,7 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 	product := models.Product{}
 
 	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("create data failed", err.Error())
 		return
 	}
 
@@ -34,7 +37,32 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 		return
 	}
 
-	respone, err := h.CreateProduct(&product) // create the product
+	// get file from request body
+	file, header, err := ctx.Request.FormFile("image")
+	if err != nil {
+		response.BadRequest("create data failed, upload file failed", err.Error())
+		return
+	}
+
+	//validadsi jenis file
+	mimeType := header.Header.Get("Content-Type")
+	if mimeType != "image/jpg" && mimeType != "image/png" {
+		response.BadRequest("create data failed, upload file failed, wrong file type", err.Error())
+		return
+	}
+
+	// upload file
+	randomNumber := rand.Int()
+	fileName := fmt.Sprintf("go-product-%d", randomNumber)
+	uploadResult, err := h.UploadFile(ctx, file, fileName)
+	if err != nil {
+		response.BadRequest("create data failed, upload file failed", err.Error())
+		return
+	}
+	product.Image = uploadResult.SecureURL
+
+	// create the product
+	respone, err := h.CreateProduct(&product)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return

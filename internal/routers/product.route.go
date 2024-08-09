@@ -4,6 +4,7 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/handlers"
 	"IrmawanAriel/goBackendCoffeeShop/internal/middleware"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
+	"IrmawanAriel/goBackendCoffeeShop/pkg"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -13,7 +14,8 @@ func product(g *gin.Engine, d *sqlx.DB) {
 	route := g.Group("/product")
 
 	repo := repositories.NewProduct(d)
-	handler := handlers.NewProduct(repo)
+	var cld pkg.Cloudinary = *pkg.NewCloudinaryUtil()
+	handler := handlers.NewProduct(repo, cld)
 
 	route.GET("/", handler.FetchAll) // sorting and seacrh are included
 	route.GET("/:id", middleware.AuthJwtMiddleware("user"), handler.FetchById)
