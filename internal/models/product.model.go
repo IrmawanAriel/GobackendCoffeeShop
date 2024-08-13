@@ -11,7 +11,7 @@ type Product struct {
 	Rating       *float32   `db:"rating" json:"rating,omitempty" valid:"range(|5)~Mkasimal rating "`
 	Product_name string     `db:"product_name" json:"product_name" form:"product_name" valid:"stringlength(5|100)~Nama produk minimal 5 dan maksimal 100"`
 	Updated_at   *time.Time `db:"updated_at" json:"updated_at,omitempty"`
-	Image        string     `db:"image" json:"image" valid:"-"`
+	Image        *string    `db:"image" json:"image" valid:"stringlength(10|100)~Image is invalid"`
 	// Uuid         string     `db:"uuid" json:"uuid"`
 }
 

@@ -39,27 +39,25 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 
 	// get file from request body
 	file, header, err := ctx.Request.FormFile("image")
-	if err != nil {
-		response.BadRequest("create data failed, upload file failed", err.Error())
-		return
-	}
 
-	//validadsi jenis file
-	mimeType := header.Header.Get("Content-Type")
-	if mimeType != "image/jpg" && mimeType != "image/png" {
-		response.BadRequest("create data failed, upload file failed, wrong file type", err.Error())
-		return
-	}
+	if file != nil {
+		mimeType := header.Header.Get("Content-Type")
+		if mimeType != "image/jpg" && mimeType != "image/png" {
+			response.BadRequest("create data failed, upload file failed, wrong file type", err.Error())
+			return
+		}
 
-	// upload file
-	randomNumber := rand.Int()
-	fileName := fmt.Sprintf("go-product-%d", randomNumber)
-	uploadResult, err := h.UploadFile(ctx, file, fileName)
-	if err != nil {
-		response.BadRequest("create data failed, upload file failed", err.Error())
-		return
+		randomNumber := rand.Int()
+		fileName := fmt.Sprintf("go-product-%d", randomNumber)
+		uploadResult, err := h.UploadFile(ctx, file, fileName)
+		if err != nil {
+			response.BadRequest("create data failed, upload file failed", err.Error())
+			return
+		}
+
+		picture := uploadResult.SecureURL
+		product.Image = &picture
 	}
-	product.Image = uploadResult.SecureURL
 
 	// create the product
 	respone, err := h.CreateProduct(&product)

@@ -30,7 +30,7 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 
 	_, err := r.NamedExec(q, data)
 	if err != nil {
-		return "", fmt.Errorf("query execution error: %w", err)
+		return "error in", fmt.Errorf("query execution error: %w", err)
 	}
 
 	return "1 data product created", nil
