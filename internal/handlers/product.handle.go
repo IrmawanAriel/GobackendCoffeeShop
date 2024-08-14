@@ -11,6 +11,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type HandlerProduct struct {
@@ -26,7 +27,7 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 	response := pkg.NewResponse(ctx)
 	product := models.Product{}
 
-	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
+	if err := ctx.ShouldBind(&product); err != nil { // check data type
 		response.BadRequest("create data failed", err.Error())
 		return
 	}
@@ -38,12 +39,18 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 	}
 
 	// get file from request body
-	file, header, err := ctx.Request.FormFile("image")
+	file, header, _ := ctx.Request.FormFile("image")
 
 	if file != nil {
+		const maxFileSize = 5 * 1024 * 1024 // 5MB size limit
+		if header.Size > maxFileSize {
+			response.BadRequest("create data failed, upload file failed, file too large", "file size exceeds the 5MB limit")
+			return
+		}
+
 		mimeType := header.Header.Get("Content-Type")
-		if mimeType != "image/jpg" && mimeType != "image/png" {
-			response.BadRequest("create data failed, upload file failed, wrong file type", err.Error())
+		if mimeType != "image/jpg" && mimeType != "image/jpeg" && mimeType != "image/png" {
+			response.BadRequest("Create data failed, upload file failed", "Only jpg and png files are allowed")
 			return
 		}
 
@@ -62,7 +69,12 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 	// create the product
 	respone, err := h.CreateProduct(&product)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		// Check if the error is related to unique constraint
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name already exists"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product"})
 		return
 	}
 
@@ -114,15 +126,55 @@ func (h *HandlerProduct) FetchById(ctx *gin.Context) {
 func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	product := models.Product{}
 	idParam := ctx.Param("id")
+	response := pkg.NewResponse(ctx)
 
 	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
 		return
 	}
 
+	_, err := govalidator.ValidateStruct(&product)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
+		return
+	}
+
+	// get file from request body
+	file, header, _ := ctx.Request.FormFile("image")
+
+	if file != nil {
+		const maxFileSize = 5 * 1024 * 1024 // 5MB size limit
+		if header.Size > maxFileSize {
+			response.BadRequest("create data failed, upload file failed, file too large", "file size exceeds the 5MB limit")
+			return
+		}
+
+		mimeType := header.Header.Get("Content-Type")
+		if mimeType != "image/jpg" && mimeType != "image/jpeg" && mimeType != "image/png" {
+			response.BadRequest("Create data failed, upload file failed", "Only jpg and png files are allowed")
+			return
+		}
+
+		randomNumber := rand.Int()
+		fileName := fmt.Sprintf("go-product-%d", randomNumber)
+		uploadResult, err := h.UploadFile(ctx, file, fileName)
+		if err != nil {
+			response.BadRequest("create data failed, upload file failed", err.Error())
+			return
+		}
+
+		picture := uploadResult.SecureURL
+		product.Image = &picture
+	}
+
 	data, err := h.UpdateProduct(idParam, &product)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "data is invalid"})
+		// Check if the error is related to unique constraint
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name already exists"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
 		return
 	}
 	ctx.JSON(200, data)

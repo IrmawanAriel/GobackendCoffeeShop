@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type RepoProduct struct {
@@ -30,6 +31,10 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 
 	_, err := r.NamedExec(q, data)
 	if err != nil {
+		// Cek apakah error ini karena pelanggaran unique constraint
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return "error", fmt.Errorf("product name already exists: %w", err)
+		}
 		return "error in", fmt.Errorf("query execution error: %w", err)
 	}
 
@@ -115,7 +120,10 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 
 	_, err := r.NamedExec(q, params)
 	if err != nil {
-		return " Update Failed ", err
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return "error", fmt.Errorf("product name already exists: %w", err)
+		}
+		return "error in", fmt.Errorf("query execution error: %w", err)
 	}
 
 	return "Product updated successfully", nil

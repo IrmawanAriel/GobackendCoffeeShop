@@ -18,7 +18,7 @@ func product(g *gin.Engine, d *sqlx.DB) {
 	handler := handlers.NewProduct(repo, cld)
 
 	route.GET("/", handler.FetchAll) // sorting and seacrh are included
-	route.GET("/:id", middleware.AuthJwtMiddleware("user"), handler.FetchById)
+	route.GET("/:id", middleware.AuthJwtMiddleware(""), handler.FetchById)
 	route.POST("/", middleware.AuthJwtMiddleware("admin"), handler.PostProduct)
 	route.PATCH("/update/:id", middleware.AuthJwtMiddleware("admin"), handler.UpdateById)
 	route.DELETE("/delete/:id", middleware.AuthJwtMiddleware("admin"), handler.DeleteProduct)

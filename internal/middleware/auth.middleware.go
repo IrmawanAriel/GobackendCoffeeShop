@@ -10,28 +10,45 @@ import (
 func AuthJwtMiddleware(role string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		response := pkg.NewResponse(ctx)
-		var header string
 
-		if header = ctx.GetHeader("Authorization"); header == "" {
-			response.Unauthorized("Unauthorized", nil)
+		// Ambil header Authorization
+		header := ctx.GetHeader("Authorization")
+		if header == "" {
+			response.Unauthorized("Authorization header is missing", nil)
+			ctx.Abort()
 			return
 		}
 
-		if !strings.Contains(header, "Bearer") {
-			response.Unauthorized("Inavlid Bearer Token", nil)
+		// Pastikan header memiliki token Bearer
+		if !strings.HasPrefix(header, "Bearer ") {
+			response.Unauthorized("Invalid Bearer token format", nil)
+			ctx.Abort()
 			return
 		}
 
-		token := strings.Replace(header, "Bearer ", "", -1) // hapus Bearer token hingga tokennya saja yang tersisa
+		// Ambil token dari header
+		token := strings.TrimPrefix(header, "Bearer ")
 
-		check, err := pkg.VerifyToken(token, role)
+		// Verifikasi token
+		check, err := pkg.VerifyToken(token)
 		if err != nil {
-			response.Unauthorized("Inavlid Bearer Token", nil)
+			response.Unauthorized("Invalid Bearer token", err.Error())
+			ctx.Abort()
 			return
 		}
 
+		// Set userId dan email ke context
 		ctx.Set("userId", check.Id)
 		ctx.Set("email", check.Email)
+
+		// Jika role spesifik diperlukan, verifikasi role
+		if role != "" && check.Role != role {
+			response.Unauthorized("Invalid role for token", nil)
+			ctx.Abort()
+			return
+		}
+
+		// Lanjutkan ke handler berikutnya jika tidak ada masalah
 		ctx.Next()
 	}
 }

@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -34,7 +33,7 @@ func (c *claims) GenerateToken() (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func VerifyToken(token, role string) (*claims, error) {
+func VerifyToken(token string) (*claims, error) {
 	secret := os.Getenv("JWT_SECRET")
 	data, err := jwt.ParseWithClaims(token, &claims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
@@ -45,9 +44,6 @@ func VerifyToken(token, role string) (*claims, error) {
 	}
 
 	claimData := data.Claims.(*claims)
-	if claimData.Role != role {
-		return nil, fmt.Errorf("unauthorized: expected role %s, but got %s", role, claimData.Role)
-	}
 
 	return claimData, nil
 }
