@@ -2,17 +2,19 @@ package repositories
 
 import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type UserRepositoryInterface interface {
 	GetUserById(id string) (models.User, error)
 	GetAllUser() (*models.Users, error)
 	UpdateUser(id string, data *models.User) (string, error)
-	InsertUser(data *models.User) (string, error)
+	InsertUser(data *models.UserRegis) (string, error)
 	GetByEmail(email string) (*models.User, error)
 	CreateUser(data *models.UserCreate) (string, error)
 	DeleteUserById(id int) (string, error)
@@ -48,16 +50,22 @@ func (r *RepoUser) GetAllUser() (*models.Users, error) {
 }
 
 func (r *RepoUser) UpdateUser(id string, data *models.User) (string, error) {
-	q1 := `SELECT id FROM public.users where id = :id`
-	check := models.User{}
+	q1 := `SELECT id FROM public.users WHERE id = $1`
+	var check models.User
 
-	if err := r.Select(&check, q1, id); err != nil {
-		return "No such a User", err
+	// Cek apakah user dengan ID tersebut ada, gunakan r.Get
+	if err := r.Get(&check, q1, id); err != nil {
+		if err == sql.ErrNoRows {
+			return "No such user", fmt.Errorf("no such user")
+		}
+		return "Failed to fetch user", err
 	}
 
+	// Inisialisasi slice dan map untuk menampung klausa SET dan parameter query
 	setClauses := []string{}
 	params := map[string]interface{}{"id": id}
 
+	// Menambahkan klausa SET berdasarkan data yang diberikan
 	if data.Fullname != "" {
 		setClauses = append(setClauses, "fullname = :fullname")
 		params["fullname"] = data.Fullname
@@ -87,24 +95,27 @@ func (r *RepoUser) UpdateUser(id string, data *models.User) (string, error) {
 		params["phone"] = *data.Phone
 	}
 
+	// Jika tidak ada field yang di-update, return error
 	if len(setClauses) == 0 {
 		return "", fmt.Errorf("no fields to update")
 	}
 
+	// Menyusun query update
 	q := fmt.Sprintf(`UPDATE public.users SET %s WHERE id = :id`, strings.Join(setClauses, ", "))
 
+	// Eksekusi query update
 	_, err := r.DB.NamedExec(q, params)
 	if err != nil {
-		// if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-		// 	return "error", fmt.Errorf("user already exists: %w", nil)
-		// }
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return "User already exists", fmt.Errorf("user with this email already exists: %w", pqErr)
+		}
 		return "Update Failed", err
 	}
 
 	return "User updated successfully", nil
 }
 
-func (r *RepoUser) InsertUser(data *models.User) (string, error) {
+func (r *RepoUser) InsertUser(data *models.UserRegis) (string, error) {
 	q := `INSERT INTO public.users (fullname, email, password)
           VALUES (:fullname, :email, :password)`
 

@@ -25,7 +25,7 @@ func (m *UserRepositoryMock) UpdateUser(id string, data *models.User) (string, e
 	return args.String(0), args.Error(1)
 }
 
-func (m *UserRepositoryMock) InsertUser(data *models.User) (string, error) {
+func (m *UserRepositoryMock) InsertUser(data *models.UserRegis) (string, error) {
 	args := m.Called(data)
 	return args.String(0), args.Error(1)
 }

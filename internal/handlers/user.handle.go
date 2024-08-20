@@ -65,12 +65,12 @@ func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
 		return
 	}
 
-	response.Success("user updated successfully", res)
+	response.Created("User updated successfully", res)
 }
 
 func (h *HandlerUser) Register(ctx *gin.Context) {
 	response := pkg.NewResponse(ctx)
-	var data models.User
+	var data models.UserRegis
 
 	if err := ctx.ShouldBind(&data); err != nil {
 		response.BadRequest("invalid request data", err.Error())
