@@ -9,13 +9,14 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type HandlerUser struct {
-	*repositories.RepoUser
+	repositories.UserRepositoryInterface
 }
 
-func NewUser(r *repositories.RepoUser) *HandlerUser {
+func NewUser(r repositories.UserRepositoryInterface) *HandlerUser {
 	return &HandlerUser{r}
 }
 
@@ -94,6 +95,11 @@ func (h *HandlerUser) Register(ctx *gin.Context) {
 
 	res, err := h.InsertUser(&data)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regist account"})
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
@@ -150,5 +156,41 @@ func (r HandlerUser) Login(ctx *gin.Context) {
 	}
 
 	response.Created("login success", token)
+
+}
+
+func (h *HandlerUser) Create(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
+	var data models.UserCreate
+
+	if err := ctx.ShouldBind(&data); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := govalidator.ValidateStruct(&data)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
+		return
+	}
+
+	data.Password, err = pkg.HashPassword(data.Password)
+	if err != nil {
+		response.BadRequest("create data failed", err.Error())
+		return
+	}
+
+	res, err := h.CreateUser(&data)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regist account"})
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	ctx.JSON(200, res)
 
 }

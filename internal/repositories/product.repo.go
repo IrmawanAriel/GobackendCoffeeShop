@@ -10,6 +10,17 @@ import (
 	"github.com/lib/pq"
 )
 
+type ProductRepositoryInterface interface {
+	CreateProduct(data *models.Product) (string, error)
+	GetAllProduct(search string, sort string, category string, pagination *models.Pagination) (*models.Products, error)
+	GetProductById(id string) (*models.Product, error)
+	UpdateProduct(id string, data *models.Product) (string, error)
+	DeleteProductById(id string) (string, error)
+	GetFavoritesProduct(userID string) (*models.Products, string, error)
+	AddFavoriteProduct(userId string, productId string) (string, error)
+	DeleteFavoriteProduct(userId string, productId string) (string, error)
+}
+
 type RepoProduct struct {
 	*sqlx.DB
 }
@@ -31,7 +42,6 @@ func (r *RepoProduct) CreateProduct(data *models.Product) (string, error) {
 
 	_, err := r.NamedExec(q, data)
 	if err != nil {
-		// Cek apakah error ini karena pelanggaran unique constraint
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			return "error", fmt.Errorf("product name already exists: %w", err)
 		}

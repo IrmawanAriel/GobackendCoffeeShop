@@ -13,7 +13,7 @@ import (
 func product(g *gin.Engine, d *sqlx.DB) {
 	route := g.Group("/product")
 
-	repo := repositories.NewProduct(d)
+	var repo repositories.ProductRepositoryInterface = repositories.NewProduct(d)
 	var cld pkg.Cloudinary = *pkg.NewCloudinaryUtil()
 	handler := handlers.NewProduct(repo, cld)
 
@@ -25,8 +25,8 @@ func product(g *gin.Engine, d *sqlx.DB) {
 
 	// favorite
 	route.GET("/favorite/:userId/", middleware.AuthJwtMiddleware("user"), handler.GetFavorite)
-	// route.GET("/favorite/:userId/", handler.SearchParams)
 	route.POST("/favorite/add/:userId/:productId", middleware.AuthJwtMiddleware("user"), handler.AddFavorite)
 	route.DELETE("/favorite/delete/:userId/:productId", middleware.AuthJwtMiddleware("user"), handler.DeleteFavorite)
+	// route.GET("/favorite/:userId/", handler.SearchParams)
 
 }

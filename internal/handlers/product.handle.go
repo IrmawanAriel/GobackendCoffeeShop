@@ -15,11 +15,11 @@ import (
 )
 
 type HandlerProduct struct {
-	*repositories.RepoProduct
+	repositories.ProductRepositoryInterface
 	pkg.Cloudinary
 }
 
-func NewProduct(r *repositories.RepoProduct, cld pkg.Cloudinary) *HandlerProduct {
+func NewProduct(r repositories.ProductRepositoryInterface, cld pkg.Cloudinary) *HandlerProduct {
 	return &HandlerProduct{r, cld}
 }
 
@@ -169,7 +169,6 @@ func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 
 	data, err := h.UpdateProduct(idParam, &product)
 	if err != nil {
-		// Check if the error is related to unique constraint
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name already exists"})
 			return

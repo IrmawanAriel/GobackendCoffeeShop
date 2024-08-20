@@ -12,15 +12,15 @@ import (
 func user(g *gin.Engine, d *sqlx.DB) {
 	route := g.Group("/user")
 
-	repo := repositories.NewUser(d)
+	var repo repositories.UserRepositoryInterface = repositories.NewUser(d)
 	handler := handlers.NewUser(repo)
 
 	route.GET("/", middleware.AuthJwtMiddleware("admin"), handler.FetchAll)
 	route.POST("/login", handler.Login)
-	route.GET("/:id", middleware.AuthJwtMiddleware("user"), handler.FetchById)
+	route.GET("/:id", middleware.AuthJwtMiddleware(""), handler.FetchById)
 	route.POST("/create/", middleware.AuthJwtMiddleware("admin"), handler.Register)
-	route.POST("/register", handler.Register)
+	route.POST("/register/", handler.Create)
 	route.DELETE("/delete/:id", middleware.AuthJwtMiddleware("admin"), handler.DeleteUser)
-	route.PATCH("/update/:id", middleware.AuthJwtMiddleware("user"), handler.UpdateUserById)
+	route.PATCH("/update/:id", middleware.AuthJwtMiddleware(""), handler.UpdateUserById)
 
 }

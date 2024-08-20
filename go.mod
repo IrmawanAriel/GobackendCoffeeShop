@@ -12,13 +12,18 @@ require (
 
 require (
 	github.com/creasty/defaults v1.7.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gin-contrib/cors v1.7.2 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 )
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
-	github.com/bytedance/sonic v1.12.0 // indirect
+	github.com/bytedance/sonic v1.12.1 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
@@ -38,10 +43,10 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
-	golang.org/x/arch v0.8.0 // indirect
+	golang.org/x/arch v0.9.0 // indirect
 	golang.org/x/crypto v0.26.0
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

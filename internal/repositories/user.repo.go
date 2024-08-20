@@ -8,6 +8,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type UserRepositoryInterface interface {
+	GetUserById(id string) (models.User, error)
+	GetAllUser() (*models.Users, error)
+	UpdateUser(id string, data *models.User) (string, error)
+	InsertUser(data *models.User) (string, error)
+	GetByEmail(email string) (*models.User, error)
+	CreateUser(data *models.UserCreate) (string, error)
+	DeleteUserById(id int) (string, error)
+}
+
 type RepoUser struct {
 	*sqlx.DB
 }
@@ -85,6 +95,9 @@ func (r *RepoUser) UpdateUser(id string, data *models.User) (string, error) {
 
 	_, err := r.DB.NamedExec(q, params)
 	if err != nil {
+		// if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		// 	return "error", fmt.Errorf("user already exists: %w", nil)
+		// }
 		return "Update Failed", err
 	}
 
@@ -97,6 +110,9 @@ func (r *RepoUser) InsertUser(data *models.User) (string, error) {
 
 	_, err := r.DB.NamedExec(q, data)
 	if err != nil {
+		// if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		// 	return "error", fmt.Errorf("user already exists: %w", nil)
+		// }
 		return "Create Failed", err
 	}
 
@@ -130,4 +146,16 @@ func (r *RepoUser) GetByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (r *RepoUser) CreateUser(data *models.UserCreate) (string, error) {
+	q := `INSERT INTO public.users (fullname, email, password)
+          VALUES (:fullname, :email, :password)`
+
+	_, err := r.DB.NamedExec(q, data)
+	if err != nil {
+		return "Create Failed", err
+	}
+
+	return "User inserted successfully", nil
 }
