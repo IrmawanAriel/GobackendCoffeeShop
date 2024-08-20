@@ -1,4 +1,4 @@
-DB_SOURCE=
+DB_SOURCE=postgresql://postgres.oczurxscwnpcgcyzgdtt:oCbwpF1Tqitp7RCW@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
 MIGRATIONS_DIR=./migrations
 
 # make migrate-init name="tbl_users"

@@ -8,7 +8,7 @@ type Product struct {
 	Category     string     `db:"category" json:"category" form:"category" valid:"stringlength(4|100)~Category minimal 4 dan maksimal 100"`
 	Stock        int        `db:"stock" json:"stock" form:"stock"`
 	Price        int        `db:"price" json:"price" form:"price" valid:"range(10000|100000)~Price minimal 10.000 dan maksimal 100.000"`
-	Rating       *float32   `db:"rating" json:"rating,omitempty" valid:"range(|5)~Mkasimal rating "`
+	Rating       *float64   `db:"rating" json:"rating,omitempty" valid:"range(|5)~Mkasimal rating "`
 	Product_name string     `db:"product_name" json:"product_name" form:"product_name" valid:"stringlength(5|100)~Nama produk minimal 5 dan maksimal 100"`
 	Updated_at   *time.Time `db:"updated_at" json:"updated_at,omitempty"`
 	Image        *string    `db:"image" json:"image" valid:"stringlength(10|100)~Image is invalid"`

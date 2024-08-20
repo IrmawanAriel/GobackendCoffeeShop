@@ -148,7 +148,6 @@ func (r *RepoProduct) DeleteProductById(id string) (string, error) {
 	}
 
 	r.NamedExec(q2, params)
-
 	_, err := r.NamedExec(q, params)
 	if err != nil {
 		return "Delete Failed", err

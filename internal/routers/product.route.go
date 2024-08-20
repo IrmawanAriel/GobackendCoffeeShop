@@ -14,7 +14,7 @@ func product(g *gin.Engine, d *sqlx.DB) {
 	route := g.Group("/product")
 
 	var repo repositories.ProductRepositoryInterface = repositories.NewProduct(d)
-	var cld pkg.Cloudinary = *pkg.NewCloudinaryUtil()
+	var cld pkg.CloudinaryInterface = pkg.NewCloudinaryUtil()
 	handler := handlers.NewProduct(repo, cld)
 
 	route.GET("/", handler.FetchAll) // sorting and seacrh are included

@@ -6,7 +6,6 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/pkg"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"strconv"
 
 	"github.com/asaskevich/govalidator"
@@ -16,10 +15,10 @@ import (
 
 type HandlerProduct struct {
 	repositories.ProductRepositoryInterface
-	pkg.Cloudinary
+	pkg.CloudinaryInterface
 }
 
-func NewProduct(r repositories.ProductRepositoryInterface, cld pkg.Cloudinary) *HandlerProduct {
+func NewProduct(r repositories.ProductRepositoryInterface, cld pkg.CloudinaryInterface) *HandlerProduct {
 	return &HandlerProduct{r, cld}
 }
 
@@ -27,30 +26,29 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 	response := pkg.NewResponse(ctx)
 	product := models.Product{}
 
-	if err := ctx.ShouldBind(&product); err != nil { // check data type
-		response.BadRequest("create data failed", err.Error())
+	if err := ctx.ShouldBind(&product); err != nil {
+		response.BadRequest("Failed to create product", "Invalid data type")
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&product)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.BadRequest("Failed to create product", err.Error())
 		return
 	}
 
-	// get file from request body
 	file, header, _ := ctx.Request.FormFile("image")
 
 	if file != nil {
-		const maxFileSize = 5 * 1024 * 1024 // 5MB size limit
+		const maxFileSize = 5 * 1024 * 1024
 		if header.Size > maxFileSize {
-			response.BadRequest("create data failed, upload file failed, file too large", "file size exceeds the 5MB limit")
+			response.BadRequest("Failed to create product", "File size exceeds the 5MB limit")
 			return
 		}
 
 		mimeType := header.Header.Get("Content-Type")
 		if mimeType != "image/jpg" && mimeType != "image/jpeg" && mimeType != "image/png" {
-			response.BadRequest("Create data failed, upload file failed", "Only jpg and png files are allowed")
+			response.BadRequest("Failed to create product", "Only JPG and PNG files are allowed")
 			return
 		}
 
@@ -58,7 +56,7 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 		fileName := fmt.Sprintf("go-product-%d", randomNumber)
 		uploadResult, err := h.UploadFile(ctx, file, fileName)
 		if err != nil {
-			response.BadRequest("create data failed, upload file failed", err.Error())
+			response.InternalServerError("Failed to upload file", err.Error())
 			return
 		}
 
@@ -66,22 +64,21 @@ func (h *HandlerProduct) PostProduct(ctx *gin.Context) {
 		product.Image = &picture
 	}
 
-	// create the product
-	respone, err := h.CreateProduct(&product)
+	responseData, err := h.CreateProduct(&product)
 	if err != nil {
-		// Check if the error is related to unique constraint
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name already exists"})
+			response.BadRequest("Failed to create product", "Product name already exists")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product"})
+		response.InternalServerError("Failed to create product", err.Error())
 		return
 	}
 
-	ctx.JSON(200, respone)
+	response.Created("Product successfully created", responseData)
 }
 
 func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 
 	search := ctx.Query("search")
 	sort := ctx.Query("sort")
@@ -99,28 +96,29 @@ func (h *HandlerProduct) FetchAll(ctx *gin.Context) {
 
 	data, err := h.GetAllProduct(search, sort, category, params)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.InternalServerError("Failed to retrieve products", err.Error())
 		return
 	}
 
 	if len(*data) == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "No product found"})
+		response.NotFound("No products found", nil)
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("Successfully retrieved products", data)
 }
 
 func (h *HandlerProduct) FetchById(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	idParam := ctx.Param("id")
 
 	data, err := h.GetProductById(idParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No such product"})
+		response.NotFound("Product not found", err.Error())
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("Successfully retrieved product", data)
 }
 
 func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
@@ -128,30 +126,29 @@ func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	response := pkg.NewResponse(ctx)
 
-	if err := ctx.ShouldBind(&product); err != nil { // cek tipe data
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid favorite ID"})
+	if err := ctx.ShouldBind(&product); err != nil {
+		response.BadRequest("Failed to update product", "Invalid data type")
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&product)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.BadRequest("Failed to update product", err.Error())
 		return
 	}
 
-	// get file from request body
 	file, header, _ := ctx.Request.FormFile("image")
 
 	if file != nil {
-		const maxFileSize = 5 * 1024 * 1024 // 5MB size limit
+		const maxFileSize = 5 * 1024 * 1024
 		if header.Size > maxFileSize {
-			response.BadRequest("create data failed, upload file failed, file too large", "file size exceeds the 5MB limit")
+			response.BadRequest("Failed to update product", "File size exceeds the 5MB limit")
 			return
 		}
 
 		mimeType := header.Header.Get("Content-Type")
 		if mimeType != "image/jpg" && mimeType != "image/jpeg" && mimeType != "image/png" {
-			response.BadRequest("Create data failed, upload file failed", "Only jpg and png files are allowed")
+			response.BadRequest("Failed to update product", "Only JPG and PNG files are allowed")
 			return
 		}
 
@@ -159,7 +156,7 @@ func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 		fileName := fmt.Sprintf("go-product-%d", randomNumber)
 		uploadResult, err := h.UploadFile(ctx, file, fileName)
 		if err != nil {
-			response.BadRequest("create data failed, upload file failed", err.Error())
+			response.InternalServerError("Failed to upload file", err.Error())
 			return
 		}
 
@@ -170,70 +167,71 @@ func (h *HandlerProduct) UpdateById(ctx *gin.Context) {
 	data, err := h.UpdateProduct(idParam, &product)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name already exists"})
+			response.BadRequest("Failed to update product", "Product name already exists")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
+		response.InternalServerError("Failed to update product", err.Error())
 		return
 	}
-	ctx.JSON(200, data)
 
+	response.Success("Product successfully updated", data)
 }
 
-func (h HandlerProduct) DeleteProduct(ctx *gin.Context) {
+func (h *HandlerProduct) DeleteProduct(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	id := ctx.Param("id")
 
 	data, err := h.DeleteProductById(id)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		response.BadRequest("Failed to delete product", "Invalid product ID")
 		return
 	}
-	ctx.JSON(200, data)
 
+	response.Success("Product successfully deleted", data)
 }
 
-func (h HandlerProduct) GetFavorite(ctx *gin.Context) {
+func (h *HandlerProduct) GetFavorite(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	user := ctx.Param("userId")
+
 	data, str, err := h.GetFavoritesProduct(user)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, str)
+		response.BadRequest("Failed to retrieve favorite products", str)
 		return
 	}
 
 	if len(*data) == 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "No favorite found"})
+		response.NotFound("No favorite products found", nil)
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("Successfully retrieved favorite products", data)
 }
 
-func (h HandlerProduct) AddFavorite(ctx *gin.Context) {
-
+func (h *HandlerProduct) AddFavorite(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	user := ctx.Param("userId")
 	id := ctx.Param("productId")
 
 	data, err := h.AddFavoriteProduct(user, id)
-
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("Failed to add product to favorites", err.Error())
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("Product successfully added to favorites", data)
 }
 
-func (h HandlerProduct) DeleteFavorite(ctx *gin.Context) {
+func (h *HandlerProduct) DeleteFavorite(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	user := ctx.Param("userId")
 	id := ctx.Param("productId")
 
 	data, err := h.DeleteFavoriteProduct(user, id)
-
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("Failed to remove product from favorites", err.Error())
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("Product successfully removed from favorites", data)
 }

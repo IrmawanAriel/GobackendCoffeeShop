@@ -16,7 +16,7 @@ func (m *MockRepoProduct) CreateProduct(data *models.Product) (string, error) {
 }
 
 func (m *MockRepoProduct) GetAllProduct(search string, sort string, category string, pagination *models.Pagination) (*models.Products, error) {
-	args := m.Called(search, sort, category, pagination)
+	args := m.Called()
 	return args.Get(0).(*models.Products), args.Error(1)
 }
 

@@ -4,7 +4,6 @@ import (
 	"IrmawanAriel/goBackendCoffeeShop/internal/models"
 	"IrmawanAriel/goBackendCoffeeShop/internal/repositories"
 	"IrmawanAriel/goBackendCoffeeShop/pkg"
-	"net/http"
 	"strconv"
 
 	"github.com/asaskevich/govalidator"
@@ -21,30 +20,27 @@ func NewUser(r repositories.UserRepositoryInterface) *HandlerUser {
 }
 
 func (h *HandlerUser) FetchById(ctx *gin.Context) {
-	user := models.User{}
+	response := pkg.NewResponse(ctx)
 	id := ctx.Param("id")
-
-	if err := ctx.ShouldBind(&user); err != nil { // cek tipe data, jika benar assign
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
 
 	user, err := h.GetUserById(id)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.NotFound("user not found", err.Error())
 		return
 	}
-	ctx.JSON(200, user)
+
+	response.Success("user fetched successfully", user)
 }
 
 func (h *HandlerUser) FetchAll(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	data, err := h.GetAllUser()
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.InternalServerError("failed to fetch users", err.Error())
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.Success("users fetched successfully", data)
 }
 
 func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
@@ -53,23 +49,23 @@ func (h *HandlerUser) UpdateUserById(ctx *gin.Context) {
 	var data models.User
 
 	if err := ctx.ShouldBind(&data); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("invalid request data", err.Error())
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&data)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.BadRequest("validation failed", err.Error())
 		return
 	}
 
 	res, err := h.UpdateUser(id, &data)
-
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No such a user"})
+		response.NotFound("no such user", err.Error())
 		return
 	}
-	ctx.JSON(200, res)
+
+	response.Success("user updated successfully", res)
 }
 
 func (h *HandlerUser) Register(ctx *gin.Context) {
@@ -77,86 +73,87 @@ func (h *HandlerUser) Register(ctx *gin.Context) {
 	var data models.User
 
 	if err := ctx.ShouldBind(&data); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("invalid request data", err.Error())
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&data)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.BadRequest("validation failed", err.Error())
 		return
 	}
 
 	data.Password, err = pkg.HashPassword(data.Password)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.InternalServerError("password hashing failed", err.Error())
 		return
 	}
 
 	res, err := h.InsertUser(&data)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+			response.BadRequest("account already exists", err.Error())
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regist account"})
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.InternalServerError("failed to register account", err.Error())
 		return
 	}
 
-	ctx.JSON(200, res)
-
+	response.Created("account registered successfully", res)
 }
 
-func (h HandlerUser) DeleteUser(ctx *gin.Context) {
+func (h *HandlerUser) DeleteUser(ctx *gin.Context) {
+	response := pkg.NewResponse(ctx)
 	idUser := ctx.Param("id")
-	id, _ := strconv.Atoi(idUser)
+	id, err := strconv.Atoi(idUser)
+	if err != nil {
+		response.BadRequest("invalid user ID", err.Error())
+		return
+	}
 
 	res, err := h.DeleteUserById(id)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.NotFound("user not found", err.Error())
 		return
 	}
 
-	ctx.JSON(200, res)
-
+	response.Success("user deleted successfully", res)
 }
 
-func (r HandlerUser) Login(ctx *gin.Context) {
+func (r *HandlerUser) Login(ctx *gin.Context) {
 	response := pkg.NewResponse(ctx)
 	var data models.Login
 
 	if err := ctx.ShouldBind(&data); err != nil {
-		response.BadRequest("login failed", err.Error())
+		response.BadRequest("invalid request data", err.Error())
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&data)
 	if err != nil {
-		response.BadRequest("Login failed", err.Error())
+		response.BadRequest("validation failed", err.Error())
 		return
 	}
 
 	result, err := r.GetByEmail(data.Email)
 	if err != nil {
-		response.BadRequest("Login failed", err.Error())
+		response.NotFound("user not found", err.Error())
 		return
 	}
 
 	if err := pkg.VerifyPassword(result.Password, data.Password); err != nil {
-		response.BadRequest("Login failed", err.Error())
+		response.Unauthorized("incorrect password", err.Error())
 		return
 	}
 
 	jwt := pkg.NewJWT(result.Id, result.Email, result.Role)
 	token, err := jwt.GenerateToken()
 	if err != nil {
-		response.Unauthorized("failed generate token", err.Error())
+		response.InternalServerError("failed to generate token", err.Error())
 		return
 	}
 
-	response.Created("login success", token)
-
+	response.Success("login successful", token)
 }
 
 func (h *HandlerUser) Create(ctx *gin.Context) {
@@ -164,33 +161,31 @@ func (h *HandlerUser) Create(ctx *gin.Context) {
 	var data models.UserCreate
 
 	if err := ctx.ShouldBind(&data); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.BadRequest("invalid request data", err.Error())
 		return
 	}
 
 	_, err := govalidator.ValidateStruct(&data)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.BadRequest("validation failed", err.Error())
 		return
 	}
 
 	data.Password, err = pkg.HashPassword(data.Password)
 	if err != nil {
-		response.BadRequest("create data failed", err.Error())
+		response.InternalServerError("password hashing failed", err.Error())
 		return
 	}
 
 	res, err := h.CreateUser(&data)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+			response.BadRequest("account already exists", err.Error())
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regist account"})
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		response.InternalServerError("failed to create account", err.Error())
 		return
 	}
 
-	ctx.JSON(200, res)
-
+	response.Created("account created successfully", res)
 }
