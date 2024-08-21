@@ -187,7 +187,6 @@ func TestUpdateUserById(t *testing.T) {
 	assert.Equal(t, "User updated successfully", actualResponse.Message, "Response message does not match")
 	assert.Equal(t, "User updated successfully", actualResponse.Data, "Data does not match")
 }
-
 func TestDeleteUser(t *testing.T) {
 	router := gin.Default()
 	userRepositoryMock := new(repositories.UserRepositoryMock)

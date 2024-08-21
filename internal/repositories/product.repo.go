@@ -139,17 +139,19 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 	return "Product updated successfully", nil
 }
 
-func (r *RepoProduct) DeleteProductById(id string) (string, error) {
-	q := `DELETE FROM public.product WHERE id = :id`
-	q2 := `DELETE FROM public.favorite_product WHERE product_id = :id`
+func (r *RepoProduct) DeleteProductById(id string) (string, error) { //db transaction
+	q := `BEGIN;
+		DELETE FROM public.favorite_product WHERE product_id = :id;
+		DELETE FROM public.product WHERE id = :id;
+		COMMIT;`
 
 	params := map[string]interface{}{
 		"id": id,
 	}
-
-	r.NamedExec(q2, params)
 	_, err := r.NamedExec(q, params)
 	if err != nil {
+		rollbackQuery := `ROLLBACK;`
+		r.NamedExec(rollbackQuery, nil)
 		return "Delete Failed", err
 	}
 
