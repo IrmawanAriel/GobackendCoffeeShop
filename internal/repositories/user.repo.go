@@ -130,7 +130,12 @@ func (r *RepoUser) InsertUser(data *models.UserRegis) (string, error) {
 	return "User inserted successfully", nil
 }
 
-func (h *RepoUser) DeleteUserById(id int) (string, error) {
+func (h *RepoUser) DeleteUserById(id int) (string, error) { // db transaction
+	tx, err := h.Beginx()
+	if err != nil {
+		return "Failed to start transaction", err
+	}
+
 	q := `DELETE FROM public.users WHERE id = :id`
 	q2 := `DELETE FROM public.favorite_product where user_id = :id`
 
@@ -138,11 +143,18 @@ func (h *RepoUser) DeleteUserById(id int) (string, error) {
 		"id": id,
 	}
 
-	h.NamedExec(q2, params)
+	if _, err := tx.NamedExec(q2, params); err != nil {
+		tx.Rollback() // Jika error, rollback transaksi
+		return "Failed to delete from user", err
+	}
 
-	_, err := h.NamedExec(q, params)
-	if err != nil {
+	if _, err := tx.NamedExec(q, params); err != nil {
+		tx.Rollback() // Jika error, rollback transaksi
 		return "Delete Failed", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "Failed to commit transaction", err
 	}
 
 	return "User deleted successfully", nil

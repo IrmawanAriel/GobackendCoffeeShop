@@ -139,25 +139,40 @@ func (r *RepoProduct) UpdateProduct(id string, data *models.Product) (string, er
 	return "Product updated successfully", nil
 }
 
-func (r *RepoProduct) DeleteProductById(id string) (string, error) { //db transaction
-	q := `BEGIN;
-		DELETE FROM public.favorite_product WHERE product_id = :id;
-		DELETE FROM public.product WHERE id = :id;
-		COMMIT;`
+func (r *RepoProduct) DeleteProductById(id string) (string, error) {
+	tx, err := r.Beginx()
+	if err != nil {
+		return "Failed to start transaction", err
+	}
+
+	q := `DELETE FROM public.product WHERE id = :id`
+	q2 := `DELETE FROM public.favorite_product WHERE product_id = :id`
 
 	params := map[string]interface{}{
 		"id": id,
 	}
-	_, err := r.NamedExec(q, params)
-	if err != nil {
-		rollbackQuery := `ROLLBACK;`
-		r.NamedExec(rollbackQuery, nil)
+
+	if _, err := tx.NamedExec(q2, params); err != nil {
+		tx.Rollback() // Jika error, rollback transaksi
+		return "Failed to delete from favorite_product", err
+	}
+
+	if _, err := tx.NamedExec(q, params); err != nil {
+		tx.Rollback() // Jika error, rollback transaksi
 		return "Delete Failed", err
 	}
 
-	return "Product deleted successfully", nil
+	//jika semua berhasil
+	if err := tx.Commit(); err != nil {
+		return "Failed to commit transaction", err
+	}
 
+	return "Product deleted successfully", nil
 }
+
+///////////////////
+//////Favorite/////
+///////////////////
 
 func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, string, error) {
 	q := `SELECT p.*
@@ -175,24 +190,45 @@ func (r *RepoProduct) GetFavoritesProduct(userID string) (*models.Products, stri
 	return &products, "", nil
 }
 
-func (r RepoProduct) AddFavoriteProduct(userId string, productId string) (string, error) {
-	q := `INSERT INTO public.favorite_product ("user_id","product_id") 
-	VALUES(
-	:user_id,
-	:product_id )`
+func (r *RepoProduct) AddFavoriteProduct(userId string, productId string) (string, error) {
+	// Mulai transaksi
+	tx, err := r.DB.Beginx()
+	if err != nil {
+		return "Failed to start transaction", err
+	}
+
+	q2 := `SELECT COUNT(*) FROM public.favorite_product WHERE product_id = $1 AND user_id = $2`
+	var count int
+	if err := tx.Get(&count, q2, productId, userId); err != nil {
+		tx.Rollback() // Rollback jika ada kesalahan
+		return "Failed to check favorite product", err
+	}
+
+	if count > 0 {
+		tx.Rollback()
+		return "Product already added to favorites", nil
+	}
+
+	// Jika belum ada, tambahkan ke favorite_product
+	q := `INSERT INTO public.favorite_product ("user_id", "product_id") 
+	       VALUES (:user_id, :product_id)`
 
 	params := map[string]interface{}{
 		"user_id":    userId,
 		"product_id": productId,
 	}
 
-	_, err := r.NamedExec(q, params)
-	if err != nil {
-		return "", fmt.Errorf("no product with id: %s\nor no user with id : %s", productId, userId)
+	if _, err := tx.NamedExec(q, params); err != nil {
+		tx.Rollback() // Rollback jika ada kesalahan
+		return "Failed to add product to favorites", err
+	}
+
+	// Commit transaksi jika semua operasi berhasil
+	if err := tx.Commit(); err != nil {
+		return "Failed to commit transaction", err
 	}
 
 	return "Product added to favorite successfully", nil
-
 }
 
 func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (string, error) {
@@ -209,5 +245,4 @@ func (r RepoProduct) DeleteFavoriteProduct(userId string, productId string) (str
 	}
 
 	return "Product deleted from favorite successfully", nil
-
 }
