@@ -1,6 +1,6 @@
 module IrmawanAriel/goBackendCoffeeShop
 
-go 1.22.5
+go 1.21.0
 
 require (
 	github.com/cloudinary/cloudinary-go/v2 v2.8.0

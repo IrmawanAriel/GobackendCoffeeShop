@@ -7,7 +7,7 @@ migrate-init:
 
 # make migrate-up
 migrate-up:
-	migrate -path ${MIGRATIONS_DIR} -database ${DB_SOURCE} -verbose up
+	migrate -path ./migrations -database postgresql://postgres.oczurxscwnpcgcyzgdtt:oCbwpF1Tqitp7RCW@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres -verbose up
 
 # make migrate-down
 migrate-down:
@@ -15,6 +15,6 @@ migrate-down:
 
 # make migrate-fix
 migrate-fix:
-	migrate -path ${MIGRATIONS_DIR} -database ${DB_SOURCE} force 0
+	migrate -path ./migrations -database postgresql://postgres.oczurxscwnpcgcyzgdtt:oCbwpF1Tqitp7RCW@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres force 0
 
 go run ./cmd/main.go
